@@ -171,12 +171,14 @@
     });
 
     
-    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', function ($scope, authSvc, Upload, $mdToast) {
+    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout',
+                        function ($scope, authSvc, Upload, $mdToast, $timeout) {
         
         
         
 
         $scope.FbGroupURL;
+        $scope.bindingInterval;
 
         $scope.textbooks = [];
         $scope.textbooks.push({
@@ -197,7 +199,13 @@
                 price: 0.00,
                 picture: null
             });
+
+            $scope.$evalAsync(function(){
+                $timeout(bindButtonsToFileInputs, 100);
+            });
+
         };
+
 
         $(document).ready(function () {
             bindButtonsToFileInputs();
@@ -208,7 +216,15 @@
             var fileUploadButtons = $(".fileUploadButton");
             $.each(fileUploadButtons, function (index, value) {
 
-                var fileInput = $(this).siblings(".fileInput").eq(0);
+                //check if an onclick event is currently binded to this button. 
+                //If so, continue to next button
+                var registeredEvents = $._data(value, "events");
+                if(registeredEvents)
+                {
+                    if(registeredEvents.click) return;
+                }
+
+                var fileInput = $("#fileInput"+index);
                 $(this).on("click", function () {
                     fileInput.click();
                     $(this).text("UPLOAD PICTURE");
@@ -224,29 +240,66 @@
                 });
 
             });
+
+            if($scope.bindingInterval) clearInterval($scope.bindingInterval);
         }
 
         $scope.onFormSubmit = function () {
 
-            if (!$scope.adForm.$valid)
-            {
-                //$scope.$apply();
-                $scope.adForm.$submitted = true;
-                return;
-            }
+            // if (!$scope.adForm.$valid)
+            // {
+            //     $scope.adForm.$submitted = true;
+            //     return;
+            // }
+
+            var images = [];
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+
+            //the width of the previous image. Use for horizontal concatenation
+            var prevWidth = 0;
+
 
             $.each($scope.textbooks, function (index, value) {
-
                 if(value.picture)
                 {
-                    upload(value.picture);
-                }
+                    //pictureFiles.push(value.picture);
+                    var addImg = new Image();
+                    addImg.onload = function() {
 
+                        /// set size proportional to image
+                        canvas.height = canvas.width * (addImg.height / addImg.width);
+
+                        /// step 1 - resize to 50%
+                        var oc = document.createElement('canvas'),
+                            octx = oc.getContext('2d');
+
+                        oc.width = addImg.width * 0.5;
+                        oc.height = addImg.height * 0.5;
+                        octx.drawImage(addImg, 0, 0, oc.width, oc.height);
+
+                        /// step 2 - resize 50% of step 1
+                        octx.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5);
+
+                        /// step 3, resize to final size
+                        context.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5,
+                        0, 0, canvas.width, canvas.height);
+
+                        // context.drawImage(addImg, prevWidth, 0, 200, 
+                        //     (addImg.height/addImg.width)*200);
+                    };
+                    addImg.src = URL.createObjectURL(value.picture);
+                    prevWidth = addImg.width;
+                }
             });
 
-            //if ($scope.upload_form.file.$valid && $scope.file) { //check if from is valid
-            //    vm.upload(vm.file); //call upload function
-            //}
+            //clean up temp URLs
+            $.each(images, function(index, value){
+                URL.revokeObjectURL(value.src);
+            });
+
+            //upload(value.picture);
+
         };
 
 

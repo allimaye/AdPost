@@ -137,7 +137,7 @@
                                            ngf-pattern="'image/*'"
                                            accept="image/*"
                                            ngf-max-size="20MB"
-                                           class="ng-hide fileInput" />
+                                           class="ng-hide fileInput" id="fileInput{{$index}}"/>
                                     <div ng-messages="adForm.picture.$error" ng-if="adForm.picture.$dirty">
                                         <div ng-message="required">This is required.</div>
                                         <div ng-message="maxSize">File too large. Max 20 MB.</div>
@@ -159,5 +159,7 @@
             </md-card>
         </form>
     </md-content>
+
+    <canvas width="600" id="canvas"></canvas>
 </body>
 </html>
