@@ -85,6 +85,25 @@
                 
             };
 
+            authSvc.postToGroup = function(groupId, postObject) {
+                FB.api("/"+groupId+"/photos",
+                        "POST",
+                        {
+                            "message": postObject.message,
+                            "url": postObject.url,
+                            "name": postObject.name,
+                            "caption": postObject.caption,
+                            "description": postObject.description
+                        },
+                        function (response) {
+                            if (response && !response.error)
+                            {
+                                console.log(response);
+                            }
+                                /* handle the result */
+                        });
+            };
+
             FB.Event.subscribe('auth.authResponseChange', function (response) {
                 //The user is not logged to the app, or into Facebook. Re-authenticate.
                 if (response.status !== 'connected') {
@@ -108,22 +127,26 @@
                 });
             }
 
-            function postToGroup() {
-                var groupId = '1675366959396956';
-                FB.api("/"+groupId+"/photos",
-                        "POST",
-                        {
-                            "message": "test post from AdPost",
-                            "url": "http://blogs.ubc.ca/pausing/files/2015/03/Flower_jtca001.jpg"
-                        },
-                        function (response) {
-                            if (response && !response.error)
-                            {
-                                console.log(response);
-                            }
-                                /* handle the result */
-                        });
-            }
+
+
+
+
+            // function postToGroup() {
+            //     var groupId = '1675366959396956';
+            //     FB.api("/"+groupId+"/photos",
+            //             "POST",
+            //             {
+            //                 "message": "test post from AdPost",
+            //                 "url": "http://blogs.ubc.ca/pausing/files/2015/03/Flower_jtca001.jpg"
+            //             },
+            //             function (response) {
+            //                 if (response && !response.error)
+            //                 {
+            //                     console.log(response);
+            //                 }
+            //                     /* handle the result */
+            //             });
+            // }
 
         }
 
@@ -140,6 +163,7 @@
         this.user;
         this.auth;
         this.authenticate = function () { };
+        this.postToGroup = function() { };
 
         var self = this;
 
@@ -167,18 +191,19 @@
                 }
             }
             return false;
-        }
+        };
     });
 
-    
-    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout',
-                        function ($scope, authSvc, Upload, $mdToast, $timeout) {
-        
-        
-        
+    app.service('imageSvc', function () {
+        //put all image processing code in here
+    });
+
+    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout', '$mdDialog'
+                        function ($scope, authSvc, Upload, $mdToast, $timeout, $mdDialog) {
 
         $scope.FbGroupURL;
         $scope.bindingInterval;
+        $scope.postObject;
 
         $scope.textbooks = [];
         $scope.textbooks.push({
@@ -256,52 +281,80 @@
             var canvas = document.getElementById('canvas');
             var context = canvas.getContext('2d');
 
-            //the width of the previous image. Use for horizontal concatenation
-            var prevWidth = 0;
 
-
+            //convert File objects to Image objects
             $.each($scope.textbooks, function (index, value) {
                 if(value.picture)
                 {
-                    //pictureFiles.push(value.picture);
-                    var addImg = new Image();
-                    addImg.onload = function() {
-
-                        /// set size proportional to image
-                        canvas.height = canvas.width * (addImg.height / addImg.width);
-
-                        /// step 1 - resize to 50%
-                        var oc = document.createElement('canvas'),
-                            octx = oc.getContext('2d');
-
-                        oc.width = addImg.width * 0.5;
-                        oc.height = addImg.height * 0.5;
-                        octx.drawImage(addImg, 0, 0, oc.width, oc.height);
-
-                        /// step 2 - resize 50% of step 1
-                        octx.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5);
-
-                        /// step 3, resize to final size
-                        context.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5,
-                        0, 0, canvas.width, canvas.height);
-
-                        // context.drawImage(addImg, prevWidth, 0, 200, 
-                        //     (addImg.height/addImg.width)*200);
-                    };
-                    addImg.src = URL.createObjectURL(value.picture);
-                    prevWidth = addImg.width;
+                    var newImg = new Image();
+                    newImg.src = URL.createObjectURL(value.picture);
+                    images.push({
+                        img: newImg,
+                        width: null,
+                        height: null,
+                        aspectRatio: function() {
+                           return this.width/this.height;
+                        }
+                    });       
                 }
             });
 
-            //clean up temp URLs
-            $.each(images, function(index, value){
-                URL.revokeObjectURL(value.src);
-            });
+            if(images.length > 0)
+            {
+                //calculate presetWidth based on browser space and number of images to be filled
+                var card = $("#canvasContainer");
+                var cardPadding = parseInt(card.css('padding-right')) + parseInt(card.css('padding-left'));
+                var space = $("#canvasContainer")[0].clientWidth - cardPadding;
+                //width of uploaded images during concatenation
+                var presetWidth = space/images.length; 
 
-            //upload(value.picture);
+                $.each(images, function (index, image) {
+                    image.img.onload = function() {
+                        image.width = this.width;
+                        image.height = this.height;
+                    };
+                });
+                
+                $scope.$evalAsync(function(){
+                    $timeout(loadImagesAndPromptUser, 500);
+                });
+                
+            }
 
+            function loadImagesAndPromptUser()
+            {
+                canvas.width = images.length * presetWidth;
+                canvas.height = getMaxCanvasHeight(images, presetWidth);
+                $.each(images, function (index, image) {
+                    context.drawImage(image.img, index*presetWidth, 0, presetWidth, 
+                               presetWidth/image.aspectRatio());
+                    //clean up temp URL
+                    URL.revokeObjectURL(image.img.src);
+                });
+
+                var confirm = $mdDialog.confirm()
+                                  .title('Do you like what you see?')
+                                  .textContent('Are you ok with posting the concatenated' + 
+                                    'image shown in the live preview?')
+                                  .ok('Looks good!')
+                                  .cancel("Don't include the image.");
+
+                $mdDialog.show(confirm).then(function() {
+                   $scope.postObject = {
+                        message:
+                        includeImg:
+                        url:
+                        name:
+                        caption:
+                        description:
+                    };
+                }, function() {
+                  $scope.status = 'You decided to keep your debt.';
+                });
+
+            }
+            
         };
-
 
         function upload(file) {
             Upload.upload({
@@ -325,6 +378,17 @@
             });
         }
 
+        function getMaxCanvasHeight(images, presetWidth) {
+            var max = 0;
+
+            $.each(images, function (index, image) {
+                var presetHeight = presetWidth/image.aspectRatio();
+                if(presetHeight > max) max = presetHeight;
+            });
+
+            return max;
+        }
+
     }]);
 
 
@@ -335,3 +399,50 @@
 
 })();
 
+
+/* ========= Potentially useful code ======
+
+- image resizing (step down technique)
+
+
+
+// // set main canvas size proportional to image
+// canvas.height = canvas.width * (addImg.height / addImg.width);
+// // context.drawImage(addImg, 0, 0, canvas.width, canvas.height);
+
+// //Step 1 - resize to 50% of original. This is done by first halving the canvas width/height,
+// //and then adding the image to the modified canvas
+// var oc = document.createElement('canvas'),
+//     octx = oc.getContext('2d');
+
+// oc.width = addImg.width * 0.5;
+// oc.height = addImg.height * 0.5;
+// octx.drawImage(addImg, 0, 0, oc.width, oc.height);
+
+// //Step 2 - resize to 50% of Step 1. Draw the half size canvas onto itself,
+// //once again halving dimensions as its done.
+// octx.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5);
+
+// //Step 3, resize to final size. Draw temp canvas into final canvas using clipping.
+// //Start clipping at (0,0) and only use half of temp canvas dimensions since that is
+// //the only part of the canvas that was filled in Step 2. 
+// context.drawImage(oc, 0, 0, oc.width * 0.5, oc.height * 0.5,
+// 0, 0, canvas.width, canvas.height);
+
+
+
+// var addImg = new Image();
+
+// addImg.onload = function() {
+//     addImg.style.width = presetWidth+"px";
+//     addImg.style.height = "auto";
+//     context.drawImage(addImg, index*presetWidth, 0, presetWidth, canvas.height);
+// };
+
+// addImg.src = URL.createObjectURL(img);
+
+
+
+
+
+*/

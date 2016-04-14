@@ -157,9 +157,19 @@
                     <md-button class="md-raised md-primary" ng-click="onFormSubmit()" type="submit">Submit</md-button>
                 </md-card-actions>
             </md-card>
+            <md-card>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">Live Preview</span>
+                    </md-card-title-text>
+                </md-card-title>
+                <md-card-content id="canvasContainer">
+                    <canvas id="canvas"></canvas>
+                </md-card-content>
+            </md-card>
         </form>
     </md-content>
 
-    <canvas width="600" id="canvas"></canvas>
+
 </body>
 </html>
