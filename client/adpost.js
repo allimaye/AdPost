@@ -86,22 +86,30 @@
             };
 
             authSvc.postToGroup = function(groupId, postObject) {
+                groupId = '1675366959396956';
+
+                var tempObj = {
+                    "message": postObject.message
+                };
+
+                if(postObject.includeImg)
+                {
+                    tempObj["url"] = postObject.url;
+                    tempObj["name"] = postObject.name;
+                    tempObj["caption"] = postObject.caption;
+                    tempObj["description"] = postObject.description;
+                }
+
                 FB.api("/"+groupId+"/photos",
-                        "POST",
+                    "POST",
+                    tempObj, 
+                    function (response) {
+                        if (response && !response.error)
                         {
-                            "message": postObject.message,
-                            "url": postObject.url,
-                            "name": postObject.name,
-                            "caption": postObject.caption,
-                            "description": postObject.description
-                        },
-                        function (response) {
-                            if (response && !response.error)
-                            {
-                                console.log(response);
-                            }
+                            console.log(response);
+                        }
                                 /* handle the result */
-                        });
+                });
             };
 
             FB.Event.subscribe('auth.authResponseChange', function (response) {
@@ -198,7 +206,7 @@
         //put all image processing code in here
     });
 
-    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout', '$mdDialog'
+    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout', '$mdDialog',
                         function ($scope, authSvc, Upload, $mdToast, $timeout, $mdDialog) {
 
         $scope.FbGroupURL;
@@ -253,6 +261,7 @@
                 $(this).on("click", function () {
                     fileInput.click();
                     $(this).text("UPLOAD PICTURE");
+                    $scope.textbooks[index].picture = null;
                 });
 
                 var fileUploadButton = $(this);
@@ -316,12 +325,16 @@
                 });
                 
                 $scope.$evalAsync(function(){
-                    $timeout(loadImagesAndPromptUser, 500);
+                    $timeout(loadImages, 500);
                 });
                 
             }
+            else
+            {
+                promptUser();
+            }
 
-            function loadImagesAndPromptUser()
+            function loadImages()
             {
                 canvas.width = images.length * presetWidth;
                 canvas.height = getMaxCanvasHeight(images, presetWidth);
@@ -332,26 +345,67 @@
                     URL.revokeObjectURL(image.img.src);
                 });
 
+                promptUser();
+            }
+
+            function promptUser()
+            {
                 var confirm = $mdDialog.confirm()
                                   .title('Do you like what you see?')
                                   .textContent('Are you ok with posting the concatenated' + 
                                     'image shown in the live preview?')
                                   .ok('Looks good!')
-                                  .cancel("Don't include the image.");
+                                  .cancel("Cancel")
+                                  .hasBackdrop(false);
 
                 $mdDialog.show(confirm).then(function() {
-                   $scope.postObject = {
-                        message:
-                        includeImg:
-                        url:
-                        name:
-                        caption:
-                        description:
-                    };
-                }, function() {
-                  $scope.status = 'You decided to keep your debt.';
-                });
+                    var postMsg = composePostMessage();
+                    var includeImage = images.length > 0;
 
+                    if(includeImage)
+                    {
+                       var imgData = canvas.toDataURL("image/png").split(',')[1];
+                        $.ajax({
+                            url: 'https://api.imgur.com/3/image',
+                            type: 'post',
+                            headers: {
+                                Authorization: 'Client-ID 5eaf7c7f9474480'
+                            },
+                            data: {
+                                image: imgData
+                            },
+                            dataType: 'json',
+                            success: function(response) {
+                                if(response.success) 
+                                {
+                                    var liveURL = response.data.link;
+                                    $scope.postObject = {
+                                        message: postMsg,
+                                        includeImg: includeImage,
+                                        url: liveURL,
+                                        name: "test name",
+                                        caption: "test caption",
+                                        description: "test description"
+                                    };
+                                    postToFB();
+                                }
+                            }
+                        });
+                    }
+                    else
+                    {
+                        $scope.postObject = {
+                            message: postMsg,
+                            includeImg: includeImage,
+                            url: null,
+                            name: "test name",
+                            caption: "test caption",
+                            description: "test description"
+                        };
+                        postToFB();
+                    }
+
+                }, function() {});
             }
             
         };
@@ -387,6 +441,32 @@
             });
 
             return max;
+        }
+
+        function composePostMessage()
+        {
+            var selling = "", buying = "";
+
+            $.each($scope.textbooks, function(index, textbook){
+                if(textbook.operation == "SELLING")
+                {
+                    selling += textbook.courseCode + " - " + textbook.author + 
+                                ": " + textbook.name +" $" + textbook.price + "\n";                    
+                }
+                else
+                {
+                    buying += textbook.courseCode + " - " + textbook.author + 
+                                ": " + textbook.name +" $" + textbook.price + "\n";
+                }
+            }); 
+
+            var msg = "SELLING:\n\n" + selling + "\nBUYING:\n\n" + buying;
+            return msg; 
+        }
+
+        function postToFB()
+        {
+            authSvc.postToGroup(null, $scope.postObject);
         }
 
     }]);
