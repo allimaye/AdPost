@@ -1,17 +1,26 @@
 
 (function () {
 
-    var app = angular.module('AdPost', ['ngMaterial', 'ngMessages', 'ngFileUpload']);
+    var app = angular.module('AdPost', ['ngMaterial', 'ngMessages', 'ngFileUpload', 'ngRoute']);
 
 
-    app.config(function ($mdThemingProvider) {
-        $mdThemingProvider.theme('default');
+    app.config(function ($routeProvider) {
+      $routeProvider.
+        when('/index', {
+            templateUrl: 'form.html',
+            controller: 'FormController'
+        }).
+        when('/publish_feed', {
+            templateUrl: 'publish_feed.html',
+            controller: 'FeedController'
+        }).
+        otherwise({
+            redirectTo: '/index'
+        });
     });
 
 
     app.run(['$rootScope', '$window', 'authSvc',  function ($rootScope, $window, authSvc) {
-
-
 
         //Use an immediately invoked function expression to setup
 
@@ -77,7 +86,6 @@
                     authSvc.auth = response.authResponse;
                     authSvc.user = { "userID": response.authResponse.userID };
                     console.log("AuthResponse: " + response.authResponse);
-                    readGroups();
                 }, {
                     scope: 'publish_actions,user_managed_groups',
                     return_scopes: true
@@ -110,6 +118,42 @@
                         }
                                 /* handle the result */
                 });
+
+                //FB.login(function (response) {
+                //    authSvc.auth = response.authResponse;
+                //    authSvc.user = { "userID": response.authResponse.userID };
+                //    console.log("AuthResponse: " + response.authResponse);
+                //}, {
+                //    scope: 'publish_actions,user_managed_groups',
+                //    return_scopes: true
+                //});
+
+                //FB.api(
+                //  '/1717234368546562/feed',
+                //  'POST',
+                //  { "message": "test3" },
+                //  function (response) {
+                //      console.log(response);
+                //      // Insert your code here
+                //  }
+                //);
+              
+                //groupId = '1717234368546562';
+                //var tempObj = {
+                //    message: postObject.message,
+                //    access_token: 'CAACEdEose0cBAD1h0qkG758FaG3NFy0hFNXjOw0WZAvtPtzZCRhhNVviVNYoHNYSkvQQboc7sJ5RCYHXEf9Irj22AigWfhrPRwsIX3PU6mLheCZAPoejUGTq0kRj7mUbX5aJU51NPdkPlO9CRiox7sF11fgAx6eIA8hJ5lKny0hfZA3WcfOEiVseVZBxpwvJipYgCBHdUGwADcGeVqRqq'
+                //};
+
+                //$.ajax({
+                //    url: 'https://graph.facebook.com/v2.6/' + groupId + '/feed',
+                //    type: 'post',
+                //    dataType: 'json',
+                //    data: tempObj, 
+                //    success: function (data) {
+                //        console.log(data);
+                //    }
+                //});
+
             };
 
             FB.Event.subscribe('auth.authResponseChange', function (response) {
@@ -212,6 +256,11 @@
         $scope.FbGroupURL;
         $scope.bindingInterval;
         $scope.postObject;
+                            
+        $scope.postingFrequency = {
+            hours: 0,
+            minutes: 0
+        };
 
         $scope.textbooks = [];
         $scope.textbooks.push({
@@ -239,8 +288,7 @@
 
         };
 
-
-        $(document).ready(function () {
+        angular.element(document).ready(function () {
             bindButtonsToFileInputs();
         });
 
@@ -336,11 +384,15 @@
 
             function loadImages()
             {
-                canvas.width = images.length * presetWidth;
-                canvas.height = getMaxCanvasHeight(images, presetWidth);
+                var potentialHeight = getMaxCanvasHeight(images, presetWidth);
+                canvas.height = potentialHeight < ($(window).height() * 0.5) ? potentialHeight : $(window).height() * 0.5;
+
+                //canvas.height = getMaxCanvasHeight(images, presetWidth);
+                canvas.width = adjustCanvasWidthBasedOnHeight(images, canvas.height);
+                var widthTaken = 0;
                 $.each(images, function (index, image) {
-                    context.drawImage(image.img, index*presetWidth, 0, presetWidth, 
-                               presetWidth/image.aspectRatio());
+                    context.drawImage(image.img, widthTaken, 0, canvas.height * image.aspectRatio(), canvas.height);
+                    widthTaken += canvas.height * image.aspectRatio();
                     //clean up temp URL
                     URL.revokeObjectURL(image.img.src);
                 });
@@ -350,13 +402,16 @@
 
             function promptUser()
             {
+                window.scrollTo(0, document.body.scrollHeight);
+                var parentElement = $("#postingFrequency")[0];
                 var confirm = $mdDialog.confirm()
-                                  .title('Do you like what you see?')
-                                  .textContent('Are you ok with posting the concatenated' + 
+                                    .parent(parentElement)
+                                    .title('Do you like what you see?')
+                                    .textContent('Are you ok with posting the concatenated ' + 
                                     'image shown in the live preview?')
-                                  .ok('Looks good!')
-                                  .cancel("Cancel")
-                                  .hasBackdrop(false);
+                                    .ok('Looks good!')
+                                    .cancel("Cancel")
+                                    .hasBackdrop(false);
 
                 $mdDialog.show(confirm).then(function() {
                     var postMsg = composePostMessage();
@@ -443,6 +498,17 @@
             return max;
         }
 
+        function adjustCanvasWidthBasedOnHeight(images, canvasHeight)
+        {
+            var total = 0;
+
+            $.each(images, function (index, image) {
+                total += canvasHeight * image.aspectRatio();
+            });
+
+            return total;
+        }
+
         function composePostMessage()
         {
             var selling = "", buying = "";
@@ -469,6 +535,20 @@
             authSvc.postToGroup(null, $scope.postObject);
         }
 
+    }]);
+
+    app.controller('FeedController', ['$scope', 'authSvc', '$filter', function ($scope, authSvc, $filter) {
+        $scope.publishedPosts = [];
+        for (var i = 0; i < 5; i++)
+        {
+            $scope.publishedPosts.push({
+                time:  $filter('date')(new Date(), "medium"),
+                success: true,
+                url: "testURL"
+            });
+        }
+        
+                      
     }]);
 
 

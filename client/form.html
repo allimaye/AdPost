@@ -1,0 +1,164 @@
+﻿<form name="adForm" ng-submit="onFormSubmit()">
+    <md-card>
+        <md-card-content>
+            <div layout="column" ng-cloak>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">1. Choose Facebook Group</span>
+                    </md-card-title-text>
+                </md-card-title>
+                <div layout="row" layout-align="space-around center">
+                    <div flex="30">
+                        <md-input-container class="md-block">
+                            <label>Facebook Group URL</label>
+                            <input required name="FbGroupURL" ng-model="FbGroupURL">
+                            <div ng-messages="adForm.FbGroupURL.$error">
+                                <div ng-message="required">This is required.</div>
+                            </div>
+                        </md-input-container>
+                    </div>
+                </div>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span class="md-headline">2. Textbooks To Sell</span>
+                    </md-card-title-text>
+                </md-card-title>
+                <div ng-repeat="textbook in textbooks">
+                    <div layout="row" layout-align="space-around center">
+                        <div flex="10">
+                            <md-input-container class="md-block">
+                                <label>Operation</label>
+                                <md-select ng-model="textbook.operation">
+                                    <md-option ng-repeat="option in ['BUYING', 'SELLING']" value="{{option}}">
+                                        {{option}}
+                                    </md-option>
+                                </md-select>
+                            </md-input-container>
+                        </div>
+                        <div flex="5"></div>
+                        <div flex="20">
+                            <md-input-container class="md-block">
+                                <label>Textbook Name</label>
+                                <input required md-no-asterisk name="name" ng-model="textbook.name">
+                                <div ng-messages="adForm.name.$error">
+                                    <div ng-message="required">This is required.</div>
+                                </div>
+                            </md-input-container>
+                        </div>
+                        <div flex="5"></div>
+                        <div flex="15">
+                            <md-input-container class="md-block">
+                                <label>Author</label>
+                                <input required md-no-asterisk name="author" ng-model="textbook.author">
+                                <div ng-messages="adForm.author.$error" ng-if="adForm.$submitted">
+                                    <div ng-message="required">This is required.</div>
+                                </div>
+                            </md-input-container>
+                        </div>
+                        <div flex="5"></div>
+                        <div flex="10">
+                            <md-input-container class="md-block">
+                                <label>Course Code</label>
+                                <input md-no-asterisk name="courseCode" ng-model="textbook.courseCode">
+                            </md-input-container>
+                        </div>
+                        <div flex="5"></div>
+                        <div flex="5">
+                            <md-input-container class="md-block">
+                                <label>Price($.¢¢)</label>
+                                <input required md-no-asterisk name="price" ng-model="textbook.price" ng-pattern="/^[+-]?[0-9]{1,3}(?:,?[0-9]{3})*\.[0-9]{2}$/">
+                                <div ng-messages="adForm.price.$error">
+                                    <div ng-message-exp="['required', 'pattern']">
+                                        Price is required and must be specified in dollars and cents (eg. 100.00).
+                                    </div>
+                                </div>
+                            </md-input-container>
+                        </div>
+                        <div flex="5"></div>
+                        <div flex="15">
+                            <input type="file"
+                                   ngf-select
+                                   ng-model="textbook.picture"
+                                   name="picture"
+                                   ngf-pattern="'image/*'"
+                                   accept="image/*"
+                                   ngf-max-size="20MB"
+                                   class="ng-hide fileInput" id="fileInput{{$index}}" />
+                            <div ng-messages="adForm.picture.$error" ng-if="adForm.picture.$dirty">
+                                <div ng-message="required">This is required.</div>
+                                <div ng-message="maxSize">File too large. Max 20 MB.</div>
+                            </div>
+                            <md-button ng-disabled="textbook.operation == 'BUYING'" class="md-raised md-primary fileUploadButton">
+                                Upload Picture
+                            </md-button>
+                        </div>
+                    </div>
+                </div>
+                <div layout="row" layout-align="start center">
+                    <div flex="30">
+                        <md-button style="background-color:greenyellow;" class="md-raised" ng-click="addBook()">Add Book</md-button>
+                    </div>
+                </div>
+                <md-card-title>
+                    <md-card-title-text>
+                        <span id="postingFrequency" class="md-headline">3. Posting Frequency</span>
+                    </md-card-title-text>
+                </md-card-title>
+                <div layout="row" layout-align="space-around center">
+                    <div flex="45">
+                        <md-slider-container>
+                            <span class="md-body-1">Hours</span>
+                            <div layout="row" layout-align="space-around center">
+                                <div flex="85">
+                                    <md-slider flex ng-model="postingFrequency.hours" min="0" max="24" aria-label="blue" id="blue-slider" class="md-primary">
+                                    </md-slider>
+                                </div>
+                                <div flex="5"></div>
+                                <div flex="10">
+                                    <md-input-container>
+                                        <input flex type="number" ng-model="postingFrequency.hours" aria-label="blue" aria-controls="blue-slider">
+                                    </md-input-container>
+                                </div>
+                            </div>
+                        </md-slider-container>
+                    </div>
+                    <div flex="5"></div>
+                    <div flex="50">
+                        <md-slider-container>
+                            <span>Minutes</span>
+                            <div layout="row" layout-align="space-around center">
+                                <div flex="85">
+                                    <md-slider flex min="0" max="60" ng-model="postingFrequency.minutes" aria-label="red" id="red-slider">
+                                    </md-slider>
+                                </div>
+                                <div flex="5"></div>
+                                <div flex="10">
+                                    <md-input-container>
+                                        <input flex type="number" ng-model="postingFrequency.minutes" aria-label="red" aria-controls="red-slider">
+                                    </md-input-container>
+                                </div>
+                            </div>
+                        </md-slider-container>
+                    </div>
+                </div>
+        </md-card-content>
+        <md-card-title>
+            <md-card-title-text>
+                <span class="md-headline">4. Submit Form</span>
+            </md-card-title-text>
+        </md-card-title>
+        <md-card-actions layout="row" layout-align="center">
+            <md-button class="md-raised md-primary" ng-click="onFormSubmit()" type="submit">Submit</md-button>
+        </md-card-actions>
+    </md-card>
+    <md-card>
+        <md-card-title>
+            <md-card-title-text>
+                <span class="md-headline">Image Preview</span>
+            </md-card-title-text>
+        </md-card-title>
+        <md-card-content id="canvasContainer">
+            <canvas id="canvas"></canvas>
+        </md-card-content>
+    </md-card>
+</form>

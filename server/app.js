@@ -19,8 +19,9 @@
 
     /** Serving from the same express Server
     No cors required */
-    app.use(express.static('../client'));
+    app.use(express.static(process.cwd()+'/client'));
     app.use(bodyParser.json());  
+    app.use('/scripts', express.static(process.cwd() + '/node_modules/'));
 
     var storage = multer.diskStorage({ //multers disk storage settings
         destination: function (req, file, cb) {
@@ -47,6 +48,8 @@
         });
     });
 
-    app.listen('6060', function(){
-        console.log('running on 6060...');
+    var port = Number(process.env.PORT || '6060');
+
+    app.listen(port, function(){
+        console.log('running on port ' + port + '...');
     });
