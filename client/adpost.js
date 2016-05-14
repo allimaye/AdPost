@@ -288,6 +288,13 @@
 
         };
 
+        $scope.removeBook = function (index) {
+            $scope.textbooks.splice(index, 1)
+            $scope.$evalAsync(function () {
+                $timeout(bindButtonsToFileInputs, 100);
+            });
+        };
+
         angular.element(document).ready(function () {
             bindButtonsToFileInputs();
         });
@@ -379,7 +386,7 @@
             }
             else
             {
-                promptUser();
+                promptUser(false);
             }
 
             function loadImages()
@@ -397,19 +404,32 @@
                     URL.revokeObjectURL(image.img.src);
                 });
 
-                promptUser();
+                promptUser(true);
             }
 
-            function promptUser()
+            function promptUser(userUploadImages)
             {
+                var dialogTitle = "", dialogText = "";
+                if (userUploadImages)
+                {
+                    dialogTitle = 'Do you like what you see?';
+                    dialogText = 'Are you ok with posting the concatenated ' +
+                                    'image shown in the live preview?';
+                }
+                else
+                {
+                    dialogTitle = 'Proceed?';
+                    dialogText = 'The application will now use the data you inputted in the form to recurringly' +
+                                    ' post to Facebook.';
+                }
+
                 window.scrollTo(0, document.body.scrollHeight);
                 var parentElement = $("#postingFrequency")[0];
                 var confirm = $mdDialog.confirm()
                                     .parent(parentElement)
-                                    .title('Do you like what you see?')
-                                    .textContent('Are you ok with posting the concatenated ' + 
-                                    'image shown in the live preview?')
-                                    .ok('Looks good!')
+                                    .title(dialogTitle)
+                                    .textContent(dialogText)
+                                    .ok('Post to Facebook')
                                     .cancel("Cancel")
                                     .hasBackdrop(false);
 
@@ -511,7 +531,7 @@
 
         function composePostMessage()
         {
-            var selling = "", buying = "";
+            var selling = "", buying = "", msg = "";
 
             $.each($scope.textbooks, function(index, textbook){
                 if(textbook.operation == "SELLING")
@@ -526,7 +546,16 @@
                 }
             }); 
 
-            var msg = "SELLING:\n\n" + selling + "\nBUYING:\n\n" + buying;
+            if (selling.length > 0)
+            {
+                msg += "SELLING:\n\n" + selling;
+            }
+          
+            if (buying.length > 0)
+            {
+                msg += "\nBUYING:\n\n" + buying;
+            }
+
             return msg; 
         }
 
