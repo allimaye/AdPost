@@ -87,6 +87,7 @@
                 if (authSvc.postObject.includeImg)
                 {
                     tempObj["link"] = authSvc.postObject.url;
+                    tempObj["picture"] = authSvc.postObject.url;
                     tempObj["caption"] = authSvc.postObject.caption;
                 }
 
@@ -535,6 +536,7 @@
         $scope.publishedPosts = [];
         $scope.publishInterval;
         $scope.timeRemaining;
+        $scope.isPosting;
     
         $scope.stopPosting = function () {
             if ($scope.publishInterval.handle)
@@ -549,6 +551,8 @@
 
         function postToFb()
         {
+            $scope.isPosting = true;
+
             authSvc.postToGroup(function (response) {
                 if (response && !response.error)
                 {
@@ -571,6 +575,8 @@
                         url: null
                     });
                 }
+                
+                $scope.isPosting = false;
             });
 
             //reset time remaining

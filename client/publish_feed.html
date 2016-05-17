@@ -32,7 +32,10 @@
             </md-list>
             <div>
                 <center>
-                    <span class="md-headline">Time remaining until next post: {{timeRemaining.timeString}}.</span>
+                    <span class="md-headline" ng-show="isPosting">Posting to Facebook...</span>
+                    <span class="md-headline" ng-show="!isPosting">
+                        Time remaining until next post: {{timeRemaining.timeString}}.
+                    </span>
                 </center>
             </div>
             <md-card-actions layout="row" layout-align="end center">
