@@ -3,7 +3,6 @@
 
     var app = angular.module('AdPost', ['ngMaterial', 'ngMessages', 'ngFileUpload', 'ngRoute']);
 
-
     app.config(function ($routeProvider) {
       $routeProvider.
         when('/index', {
@@ -18,7 +17,6 @@
             redirectTo: '/index'
         });
     });
-
 
     app.run(['$rootScope', '$window', 'authSvc',  function ($rootScope, $window, authSvc) {
 
@@ -38,7 +36,7 @@
             js = d.createElement('script');
             js.id = id;
             js.async = true;
-            js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.5";
+            js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.6";
 
             ref.parentNode.insertBefore(js, ref);
 
@@ -51,7 +49,6 @@
         //connect app to Facebook
         $window.fbAsyncInit = function () {
               
-
             FB.init({
                 appId: '1162628327133106',
 
@@ -59,24 +56,12 @@
                 status: true,
  
                 //Enable cookies to allow the server to access the session 
-                //cookie: true,
+                cookie: true,
 
                 /* Parse XFBML */
                 xfbml: true,
 
-                version: 'v2.5'
-            });
-
-            //wait on FB async init and do what's inside after FB has been initialized
-            FB.getLoginStatus(function (response) {
-                //if (response.status !== "connected")
-                //{
-                //    authSvc.login();
-                //}
-                authSvc.authenticate();
-                //postToGroup();
-                //console.log(response.authResponse)
-                    
+                version: 'v2.6'
             });
 
             authSvc.authenticate = function ()
@@ -93,66 +78,31 @@
                 
             };
 
-            authSvc.postToGroup = function(groupId, postObject) {
-                groupId = '1675366959396956';
+            authSvc.postToGroup = function(callback) {
 
                 var tempObj = {
-                    "message": postObject.message
+                    "message": authSvc.postObject.message
                 };
 
-                if(postObject.includeImg)
+                if (authSvc.postObject.includeImg)
                 {
-                    tempObj["url"] = postObject.url;
-                    tempObj["name"] = postObject.name;
-                    tempObj["caption"] = postObject.caption;
-                    tempObj["description"] = postObject.description;
+                    tempObj["link"] = authSvc.postObject.url;
+                    tempObj["caption"] = authSvc.postObject.caption;
                 }
 
-                FB.api("/"+groupId+"/photos",
+                FB.api("/" + authSvc.FbGroupID + "/feed",
                     "POST",
-                    tempObj, 
+                    tempObj,
                     function (response) {
-                        if (response && !response.error)
-                        {
-                            console.log(response);
-                        }
-                                /* handle the result */
+                        console.log(response);
+                        callback(response);
                 });
 
-                //FB.login(function (response) {
-                //    authSvc.auth = response.authResponse;
-                //    authSvc.user = { "userID": response.authResponse.userID };
-                //    console.log("AuthResponse: " + response.authResponse);
-                //}, {
-                //    scope: 'publish_actions,user_managed_groups',
-                //    return_scopes: true
-                //});
 
-                //FB.api(
-                //  '/1717234368546562/feed',
-                //  'POST',
-                //  { "message": "test3" },
-                //  function (response) {
-                //      console.log(response);
-                //      // Insert your code here
-                //  }
-                //);
-              
-                //groupId = '1717234368546562';
-                //var tempObj = {
-                //    message: postObject.message,
-                //    access_token: 'CAACEdEose0cBAD1h0qkG758FaG3NFy0hFNXjOw0WZAvtPtzZCRhhNVviVNYoHNYSkvQQboc7sJ5RCYHXEf9Irj22AigWfhrPRwsIX3PU6mLheCZAPoejUGTq0kRj7mUbX5aJU51NPdkPlO9CRiox7sF11fgAx6eIA8hJ5lKny0hfZA3WcfOEiVseVZBxpwvJipYgCBHdUGwADcGeVqRqq'
-                //};
 
-                //$.ajax({
-                //    url: 'https://graph.facebook.com/v2.6/' + groupId + '/feed',
-                //    type: 'post',
-                //    dataType: 'json',
-                //    data: tempObj, 
-                //    success: function (data) {
-                //        console.log(data);
-                //    }
-                //});
+
+
+                
 
             };
 
@@ -163,48 +113,25 @@
                 }
             });
 
-            function readGroups()
-            {
-                var userId = authSvc.user;
-                FB.api("/" + userId + "/groups",
-                        "GET",
-                        {
-                            "access_token": authSvc.auth.accessToken
-                        },
-                        function (response) {
-                        if (response && !response.error) {
-                            console.log("Read groups response: " + response);
-                            /* handle the result */
-                        }
+            authSvc.getLoginStatus = function () {
+                FB.getLoginStatus(function (response) {
+                    var readyToPost;
+                    if (response.status === 'connected') {
+                        // the user is logged in and has authenticated the app
+                        readyToPost = true;
+                    } else if (response.status === 'not_authorized') {
+                        // the user is logged in to Facebook, 
+                        // but has not authenticated your app
+                        readyToPost = false;
+                    } else {
+                        // the user isn't logged in to Facebook.
+                        readyToPost = false;
+                    }
+                    return readyToPost;
                 });
-            }
-
-
-
-
-
-            // function postToGroup() {
-            //     var groupId = '1675366959396956';
-            //     FB.api("/"+groupId+"/photos",
-            //             "POST",
-            //             {
-            //                 "message": "test post from AdPost",
-            //                 "url": "http://blogs.ubc.ca/pausing/files/2015/03/Flower_jtca001.jpg"
-            //             },
-            //             function (response) {
-            //                 if (response && !response.error)
-            //                 {
-            //                     console.log(response);
-            //                 }
-            //                     /* handle the result */
-            //             });
-            // }
+            };
 
         }
-
-       
-
-
 
     }]);
 
@@ -215,7 +142,11 @@
         this.user;
         this.auth;
         this.authenticate = function () { };
-        this.postToGroup = function() { };
+        this.postToGroup = function () { };
+        this.getLoginStatus = function () { };
+        this.FbGroupID;
+        this.postObject;
+        this.postingFrequency;
 
         var self = this;
 
@@ -244,33 +175,37 @@
             }
             return false;
         };
+
+        
     });
 
-    app.service('imageSvc', function () {
-        //put all image processing code in here
-    });
+    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout', '$mdDialog', '$location',
+                        function ($scope, authSvc, Upload, $mdToast, $timeout, $mdDialog, $location) {
 
-    app.controller('FormController', ['$scope', 'authSvc', 'Upload', '$mdToast', '$timeout', '$mdDialog',
-                        function ($scope, authSvc, Upload, $mdToast, $timeout, $mdDialog) {
 
-        $scope.FbGroupURL;
+        $scope.FbGroupID;
         $scope.bindingInterval;
         $scope.postObject;
-                            
-        $scope.postingFrequency = {
-            hours: 0,
-            minutes: 0
-        };
+        $scope.textbooks;
+        $scope.postingFrequency;
+                           
+        $scope.init = function () {
+            $scope.postingFrequency = {
+                hours: 1,
+                minutes: 0
+            };
 
-        $scope.textbooks = [];
-        $scope.textbooks.push({
-            operation: "SELLING",
-            courseCode: "",
-            author: "",
-            name: "",
-            price: 0.00,
-            picture: null
-        });
+            $scope.textbooks = [];
+            $scope.textbooks.push({
+                operation: "SELLING",
+                courseCode: "",
+                author: "",
+                name: "",
+                price: 0.00,
+                picture: null
+            });
+            $scope.showInstructionDialog();
+        };
 
         $scope.addBook = function () {
             $scope.textbooks.push({
@@ -295,9 +230,24 @@
             });
         };
 
-        angular.element(document).ready(function () {
-            bindButtonsToFileInputs();
-        });
+        $scope.showInstructionDialog = function () {
+
+            $mdDialog.show({
+                scope: $scope,        // use parent scope in template
+                preserveScope: true,
+                templateUrl: 'instructions.html',
+                controller: function DialogController($scope, $mdDialog) {
+                    $scope.closeInstructionDialog = function () {
+                        $mdDialog.hide();
+                        authSvc.authenticate();
+                        bindButtonsToFileInputs();
+                    };
+                }
+            });
+
+        };
+
+        
 
         function bindButtonsToFileInputs()
         {
@@ -335,11 +285,11 @@
 
         $scope.onFormSubmit = function () {
 
-            // if (!$scope.adForm.$valid)
-            // {
-            //     $scope.adForm.$submitted = true;
-            //     return;
-            // }
+             if (!$scope.adForm.$valid)
+             {
+                 $scope.adForm.$submitted = true;
+                 return;
+             }
 
             var images = [];
             var canvas = document.getElementById('canvas');
@@ -414,7 +364,7 @@
                 {
                     dialogTitle = 'Do you like what you see?';
                     dialogText = 'Are you ok with posting the concatenated ' +
-                                    'image shown in the live preview?';
+                                    'image shown in the Image Preview?';
                 }
                 else
                 {
@@ -439,6 +389,15 @@
 
                     if(includeImage)
                     {
+                        $mdDialog.show(
+                          $mdDialog.alert()
+                            .clickOutsideToClose(true)
+                            .title('Waiting for Imgur API')
+                            .textContent('Your image is being uploaded to Imgur. ' +
+                                'Please be patient during this process. You will be redirected shortly.')
+                            .ok('Got it!')
+                        );
+
                        var imgData = canvas.toDataURL("image/png").split(',')[1];
                         $.ajax({
                             url: 'https://api.imgur.com/3/image',
@@ -458,10 +417,9 @@
                                         message: postMsg,
                                         includeImg: includeImage,
                                         url: liveURL,
-                                        name: "test name",
-                                        caption: "test caption",
-                                        description: "test description"
+                                        caption: "View Full Image on Imgur"
                                     };
+                                    $mdDialog.hide();
                                     postToFB();
                                 }
                             }
@@ -473,9 +431,7 @@
                             message: postMsg,
                             includeImg: includeImage,
                             url: null,
-                            name: "test name",
-                            caption: "test caption",
-                            description: "test description"
+                            caption: "View Full Image on Imgur",
                         };
                         postToFB();
                     }
@@ -502,8 +458,6 @@
                 console.log(evt);
                 var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
                 console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
-                //$mdToast.show($mdToast.simple().textContent('progress: ' + progressPercentage + '% ' + evt.config.data.file.name));
-                //vm.progress = 'progress: ' + progressPercentage + '% '; // capture upload progress
             });
         }
 
@@ -561,29 +515,103 @@
 
         function postToFB()
         {
-            authSvc.postToGroup(null, $scope.postObject);
+            authSvc.postObject = $scope.postObject;
+            authSvc.FbGroupID = $scope.FbGroupID;
+            authSvc.postingFrequency= $scope.postingFrequency;
+            $location.path("/publish_feed");
+            $scope.$apply()
         }
+
+        angular.element(document).ready(function () {
+            $scope.init();
+            bindButtonsToFileInputs();
+        });
 
     }]);
 
-    app.controller('FeedController', ['$scope', 'authSvc', '$filter', function ($scope, authSvc, $filter) {
+    app.controller('FeedController', ['$scope', 'authSvc', '$filter', '$interval', 
+                function ($scope, authSvc, $filter, $interval) {
+
         $scope.publishedPosts = [];
-        for (var i = 0; i < 5; i++)
+        $scope.publishInterval;
+        $scope.timeRemaining;
+    
+        $scope.stopPosting = function () {
+            if ($scope.publishInterval.handle)
+            {
+                $interval.cancel($scope.publishInterval.handle);
+                if ($scope.timeRemaining.handle)
+                {
+                    $interval.cancel($scope.timeRemaining.handle);
+                }
+            }
+        };
+
+        function postToFb()
         {
-            $scope.publishedPosts.push({
-                time:  $filter('date')(new Date(), "medium"),
-                success: true,
-                url: "testURL"
+            authSvc.postToGroup(function (response) {
+                if (response && !response.error)
+                {
+                    var nodeID = response.id.split('_')[0];
+                    var postID = response.id.split('_')[1];
+                    var postURL = 'https://www.facebook.com/' + nodeID + '/posts/' + postID;
+                    $scope.publishedPosts.push({
+                        time: $filter('date')(new Date(), "medium"),
+                        success: true,
+                        url: postURL
+                    });
+                }
+                else
+                {
+                    var timeAndError = $filter('date')(new Date(), "medium") + "\t" +
+                                ". Error: " + response.error.message;
+                    $scope.publishedPosts.push({
+                        time: timeAndError,
+                        success: false,
+                        url: null
+                    });
+                }
             });
+
+            //reset time remaining
+            $scope.timeRemaining.time = $scope.publishInterval.time;
         }
+
         
-                      
+                    
+        angular.element(document).ready(function () {
+
+            //hours to milliseconds
+            var milliseconds = authSvc.postingFrequency.hours * 60 * 60 * 1000;
+            //minutes to milliseconds
+            milliseconds += authSvc.postingFrequency.minutes * 60 * 1000;
+
+            //minumum posting frequency is 1 hour to prevent spamming
+            if (milliseconds < 1 * 60 * 60 * 1000)
+            {
+                milliseconds = 1 * 60 * 60 * 1000;
+            }
+
+            $scope.publishInterval = {
+                handle: $interval(postToFb, milliseconds),
+                time: milliseconds
+            };
+
+            $scope.timeRemaining = {
+                handle: $interval(function () {
+                    $scope.timeRemaining.time -= 1000;
+                    $scope.timeRemaining.timeString = Math.trunc($scope.timeRemaining.time / 3600000) + " hours " +
+                        $filter('date')($scope.timeRemaining.time, "mm 'minutes' ss 'seconds'")
+                }, 1000),
+                time: milliseconds,
+                timeString: Math.trunc(milliseconds / 3600000) + " hours " +
+                    $filter('date')(milliseconds, "mm 'minutes' ss 'seconds'")
+            };
+
+            postToFb();
+        });
+
     }]);
-
-
-   
-
-
 
 
 })();
@@ -592,8 +620,6 @@
 /* ========= Potentially useful code ======
 
 - image resizing (step down technique)
-
-
 
 // // set main canvas size proportional to image
 // canvas.height = canvas.width * (addImg.height / addImg.width);
@@ -631,7 +657,64 @@
 // addImg.src = URL.createObjectURL(img);
 
 
+//FB.api("/debug_token?input_token="+authSvc.auth.accessToken,
+//     function (response) {
+//        if (response && !response.error)
+//        {
+//            console.log(response);
+//        }
+//});
+
+                
+
+//FB.login(function (response) {
+//    authSvc.auth = response.authResponse;
+//    authSvc.user = { "userID": response.authResponse.userID };
+//    console.log("AuthResponse: " + response.authResponse);
+//}, {
+//    scope: 'publish_actions,user_managed_groups',
+//    return_scopes: true
+//});
 
 
+//FB.api("/"+authSvc.user.userID + "/groups",
+                //    function (response) {
+                //        console.log(response);
+                //        if (response && !response.error) {
+                //            
+                //        }
+                //});
+
+                //FB.api("/"+groupId+"/feed",
+                //        "POST",
+                //        {
+                //            "message": "This is a test message",
+                //            "link": "http://www.revitalizenotmilitarize.org/wp-content/uploads/2013/10/FlowerPower_v1.png",
+                //            "caption": "View full image on Imgur"
+                //        },
+                //        function (response) {
+                //            console.log(response);
+                //            if (response && !response.error)
+                //            {
+                            
+                //                
+                //            }
+                // });
+
+
+
+                //$.ajax({
+                //    url: 'https://graph.facebook.com/v2.6/oauth/access_token',
+                //    type: 'get',
+                //    dataType: 'json',
+                //    data: {
+                //        "grant_type": "fb_exchange_token",
+                //        "client_id": "",
+
+                //    },
+                //    success: function (data) {
+                //        console.log(data);
+                //    }
+                //});
 
 */

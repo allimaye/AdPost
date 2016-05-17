@@ -21,8 +21,8 @@
                             </ol>
                         <md-input-container class="md-block">
                             <label>Facebook Group ID</label>
-                            <input required name="FbGroupURL" ng-model="FbGroupURL">
-                            <div ng-messages="adForm.FbGroupURL.$error">
+                            <input required name="FbGroupID" ng-model="FbGroupID">
+                            <div ng-messages="adForm.FbGroupID.$error">
                                 <div ng-message="required">This is required.</div>
                             </div>
                         </md-input-container>
@@ -87,7 +87,7 @@
                         </div>
                         <div flex="5"></div>
                         <div flex="5">
-                            <md-button style="background-color:#e6ffe6;" class="md-raised" ng-click="removeBook($index)">
+                            <md-button style="background-color:#e60000; color: white;" class="md-raised" ng-click="removeBook($index)">
                                 Remove Book
                             </md-button>
                         </div>
@@ -105,7 +105,7 @@
                                 <div ng-message="required">This is required.</div>
                                 <div ng-message="maxSize">File too large. Max 20 MB.</div>
                             </div>
-                            <md-button ng-disabled="textbook.operation == 'BUYING'" class="md-raised md-primary fileUploadButton">
+                            <md-button class="md-raised md-primary fileUploadButton">
                                 Upload Picture
                             </md-button>
                         </div>
@@ -113,9 +113,13 @@
                     </div>
                 </div>
                 <div layout="row" layout-align="start center">
-                    <div flex="30">
-                        <md-button style="background-color:#e6ffe6;" class="md-raised" ng-click="addBook()">Add Book</md-button>
+                    <div flex="5"></div>
+                    <div flex="85">
+                        <center>
+                            <md-button style="background-color:#e6ffe6;" class="md-raised" ng-click="addBook()">Add Book</md-button>
+                        </center>
                     </div>
+                    <div flex="10"></div>
                 </div>
                 <md-card-title>
                     <md-card-title-text>
@@ -129,13 +133,13 @@
                             <span class="md-title">Hours</span>
                             <div layout="row" layout-align="space-around center">
                                 <div flex="85">
-                                    <md-slider flex ng-model="postingFrequency.hours" min="0" max="24" aria-label="blue" id="blue-slider" class="md-primary">
+                                    <md-slider flex ng-model="postingFrequency.hours" min="1" max="24" aria-label="blue" id="blue-slider" class="md-primary">
                                     </md-slider>
                                 </div>
                                 <div flex="5"></div>
                                 <div flex="10">
                                     <md-input-container>
-                                        <input flex type="number" ng-model="postingFrequency.hours" aria-label="blue" aria-controls="blue-slider">
+                                        <input flex type="number" ng-model="postingFrequency.hours" min="1" max="24" aria-label="blue" aria-controls="blue-slider">
                                     </md-input-container>
                                 </div>
                             </div>
@@ -153,7 +157,7 @@
                                 <div flex="5"></div>
                                 <div flex="10">
                                     <md-input-container>
-                                        <input flex type="number" ng-model="postingFrequency.minutes" aria-label="red" aria-controls="red-slider">
+                                        <input flex type="number" min="0" max="60" ng-model="postingFrequency.minutes" aria-label="red" aria-controls="red-slider">
                                     </md-input-container>
                                 </div>
                             </div>
@@ -161,9 +165,23 @@
                     </div>
                     <div flex="5"></div>
                 </div>
+                <div layout="row" layout-align="space-around center" style="margin-bottom:20px">
+                    <div>
+                        <span class="md-title">
+                            I want to post my advertisement to Facebook every
+                            <b>{{postingFrequency.hours}}</b> hours and <b>{{postingFrequency.minutes}}</b> minutes.
+                        </span>
+                    </div>
+                </div>
         </md-card-content>
-        <md-card-actions layout="row" layout-align="center">
-            <md-button class="md-raised md-primary" ng-click="onFormSubmit()" type="submit">Submit</md-button>
+        <md-card-actions layout="row">
+            <div flex="5"></div>
+            <div flex="85">
+                <center>
+                    <md-button class="md-raised md-primary" type="submit">Submit</md-button>
+                </center>
+            </div>
+            <div flex="10"></div>
         </md-card-actions>
     </md-card>
     <md-card>

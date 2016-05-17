@@ -5,24 +5,36 @@
                 <span>Published Posts Feed</span>
             </h2>
         </md-toolbar>
-        <md-content>
+        <md-content layout-padding>
             <md-list>
                 <md-list-item class="md-3-line" ng-repeat="post in publishedPosts">
-                    <img src="images/success_icon.svg" class="md-avatar" alt="Success!">
+                    <img ng-src="images/{{post.success ? 'success_icon.svg' : 'error_icon.svg'}}" class="md-avatar" alt="Success!">
                     <div class="md-list-item-text">
                         <div layout="row" layout-align="space-around center">
                             <div flex="45">
-                                <center><h2>{{post.time}}</h2></center>
+                                <center><h2 style="color:{{post.success ? 'black' : 'red'}}">{{post.time}}</h2></center>
                             </div>
                             <div flex="10"></div>
                             <div flex="45">
-                                <center><md-button style="background-color:lemonchiffon" class="md-raised">View Post</md-button></center>
+                                <center>
+                                    <a target="_blank" href="{{post.url}}">
+                                        <md-button ng-disabled="!post.success" 
+                                                   style="background-color:lemonchiffon" class="md-raised">
+                                            View Post
+                                        </md-button>
+                                    </a>
+                                </center>
                             </div>
                         </div>
                     </div>
                     <md-divider md-inset ng-if="!$last"></md-divider>
                 </md-list-item>
             </md-list>
+            <div>
+                <center>
+                    <span class="md-headline">Time remaining until next post: {{timeRemaining.timeString}}.</span>
+                </center>
+            </div>
             <md-card-actions layout="row" layout-align="end center">
                 <md-button class="md-raised md-warn" ng-click="stopPosting()">Stop Posting</md-button>
             </md-card-actions>

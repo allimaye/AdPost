@@ -1,0 +1,30 @@
+﻿<!DOCTYPE html>
+
+<html>
+<body>
+    <md-dialog id="instrDialog" style="width:50%">
+        <md-toolbar>
+            <div class="md-toolbar-tools">
+                <span class="md-title">Instructions</span>
+                <span flex></span>
+                <md-button class="md-icon-button" ng-click="closeInstructionDialog()">
+                </md-button>
+            </div>
+        </md-toolbar>
+        <md-dialog-content>
+            <div class="md-dialog-content">
+                <p class="md-subhead">Following this popup, you will be prompted by Facebook to confirm the permissions
+                that you will be granting to this app. Please grant these permissions. 
+                Make sure to <b>select "Public"</b> in the dropdown menu when you arrive at the following dialog: 
+                </p>
+                <center>
+                    <img src="images/Fb_instructions.png" width="{{$("#instrDialog").width()}}"/>
+                </center>
+            </div>
+        </md-dialog-content>
+        <md-dialog-actions>
+            <md-button ng-click="closeInstructionDialog()" class="md-primary">OK</md-button>
+        </md-dialog-actions>
+    </md-dialog>
+</body>
+</html>
