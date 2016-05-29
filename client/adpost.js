@@ -50,7 +50,7 @@
         $window.fbAsyncInit = function () {
               
             FB.init({
-                appId: '1207375285991743',
+                appId: '1162628327133106',
 
                 // check the authentication status at the start up of the app 
                 status: true,
