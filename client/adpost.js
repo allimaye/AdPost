@@ -50,7 +50,7 @@
         $window.fbAsyncInit = function () {
               
             FB.init({
-                appId: '1162628327133106',
+                appId: '1207375285991743',
 
                 // check the authentication status at the start up of the app 
                 status: true,
@@ -67,10 +67,13 @@
             authSvc.authenticate = function ()
             {
                 FB.login(function (response) {
+                    if (response.authResponse)
+                    {
+                        authSvc.auth = response.authResponse;
+                        authSvc.user = { "userID": response.authResponse.userID };
+                        console.log("AuthResponse: " + response.authResponse);
+                    }
                     
-                    authSvc.auth = response.authResponse;
-                    authSvc.user = { "userID": response.authResponse.userID };
-                    console.log("AuthResponse: " + response.authResponse);
                 }, {
                     scope: 'publish_actions,user_managed_groups',
                     return_scopes: true
@@ -114,7 +117,7 @@
                 }
             });
 
-            authSvc.getLoginStatus = function () {
+            authSvc.getLoginStatus = function (callback) {
                 FB.getLoginStatus(function (response) {
                     var readyToPost;
                     if (response.status === 'connected') {
@@ -128,7 +131,7 @@
                         // the user isn't logged in to Facebook.
                         readyToPost = false;
                     }
-                    return readyToPost;
+                    callback(readyToPost);
                 });
             };
 
@@ -165,10 +168,10 @@
 
     
         this.appHasReqPermissions = function () {
-            if (auth) {
-                if (auth.granted_scopes) {
+            if (this.auth) {
+                if (this.auth.grantedScopes) {
                     //check that granted_scopes includes both "publish_actions" and "user_managed_groups" and return true
-                    var permissionArray = auth.granted_scopes.split(',');
+                    var permissionArray = this.auth.grantedScopes.split(',');
                     var scopes_exist = ($.inArray("publish_actions", permissionArray) > -1) &&
                                             ($.inArray("user_managed_groups", permissionArray) > -1);
                     return scopes_exist;
@@ -307,8 +310,18 @@
                 return;
             }
 
-            var result = generateImagePreview();
-            promptUser(result);
+            authSvc.getLoginStatus(function (readyToPost) {
+                if ( (!readyToPost) )
+                {
+                    authSvc.authenticate();
+                }
+                else
+                {
+                    var result = generateImagePreview();
+                    promptUser(result);
+                }
+            });
+
 
             function promptUser(userUploadedImages)
             {
